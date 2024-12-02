@@ -54,17 +54,15 @@
                             <span v-for="n in Math.max(0, 5 - lesson.rating)" :key="'empty-' + n">☆</span>
                         </div>
                         
-                        <button v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)">Add to Cart
-                           
-                            <button disabled="disabled" v-else> Out Of Stock</button>
+                        <div>
+                            <button v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)">Add to Cart</button>
+                            <button disabled="disabled" v-else> Out Of Stock!!</button>
                             <span v-if="lesson.availableInventory === cartCount(lesson.id)">All out!</span>
-                            <span v-else-if="lesson.availableInventory - cartCount(lesson.id) < 5"></span>
-                            Only {{ lesson.availableInventory - cartCount(lesson.id) }} left!
-                            
-                    <span v-else>Buy Now!</span>
-                        
-                            
-                        </span>
+                            <span v-else-if="lesson.availableInventory - cartCount(lesson.id) < 5">
+                                Only {{ lesson.availableInventory - cartCount(lesson.id) }} left!
+                            </span>
+                            <span v-else>Buy Now!</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -99,7 +97,7 @@
                             <option disabled value="">Select a state</option>
                             <option v-for="state in states" :key="state" :value="state">{{ state }}</option>
                         </select>
-                    </p>
+ </p>
                     <p>
                         <strong>Type:</strong>
                     </p>
@@ -133,8 +131,5 @@
         </main>
     </div>
     <script src="app.js"></script>
-    
-    
-
 </body>
-</html>
+</html> 
