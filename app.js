@@ -105,8 +105,10 @@ new Vue({
         
             // Prepare the order data
             const orderData = {
-                lessonId: this.cart[0].id, // Place an order for the first item in the cart
-                quantity: this.cart[0].quantity, // Quantity of the lesson being ordered
+                lessons: this.cart.map(item => ({
+                    lessonId: item.id,
+                    quantity: item.quantity
+                })),
                 customerDetails: {
                     firstName: this.order.firstName,
                     lastName: this.order.lastName,
@@ -144,7 +146,7 @@ new Vue({
             .then(result => {
                 alert(result.message); // Show success message
                 this.updateavailableInventory(); // Call the method to update seat availability
-
+        
                 // Clear the order form fields and the cart
                 this.order = {
                     firstName: '',
@@ -163,6 +165,7 @@ new Vue({
                 alert(error.message || 'Failed to place the order. Please try again later.');
             });
         },
+        
         updateavailableInventory() {
             this.cart.forEach(lesson => {
                 const updateData = {
