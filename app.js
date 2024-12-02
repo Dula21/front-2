@@ -202,8 +202,13 @@ new Vue({
             });
         },
         cartCount(lessonId) {
-            const lesson = this.cart.find(lesson => lesson.id === lessonId);
-            return lesson ? lesson.quantity : 0;
+            let count = 0;
+                    for (let i = 0; i < this.cart.length; i++) {
+                        if (this.cart[i] === lessonId) {
+                            count++;
+                        }
+                    }
+                    return count;
         },
         setSortOption(option) {
             this.sortOption = option; // Method to set sorting option
