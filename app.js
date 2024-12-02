@@ -88,26 +88,26 @@ new Vue({
             if (!this.order.firstName || !this.order.lastName || !this.order.address ||
                 !this.order.city || !this.order.zip || !this.order.state || !this.order.type) {
                 alert("Please fill out all required fields before submitting the order.");
-                return; // Exit the method if validation fails
+                return;
             }
         
             // Check if the ZIP code is numerical
             if (!/^\d+$/.test(this.order.zip)) {
                 alert("Please enter a valid ZIP code (numbers only).");
-                return; // Exit the method if ZIP code validation fails
+                return;
             }
         
             // Ensure the cart is not empty
             if (!this.cart.length) {
                 alert("Your cart is empty. Add an item before placing an order.");
-                return; // Exit if the cart is empty
+                return;
             }
         
             // Prepare the order data
             const orderData = {
                 lessons: this.cart.map(item => ({
-                    lessonId: item.id,
-                    quantity: item.quantity
+                    lessonId: item._id || item.id, // Use MongoDB ObjectId if available
+                    quantity: item.quantity,
                 })),
                 customerDetails: {
                     firstName: this.order.firstName,
@@ -116,38 +116,55 @@ new Vue({
                     city: this.order.city,
                     zip: this.order.zip,
                     state: this.order.state,
-                    type: this.order.type
-                }
+                    type: this.order.type,
+                },
             };
         
-            // Send the order data to the backend API
-            fetch('http://localhost:3000/collection/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(orderData)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        let errorMessage;
-                        try {
-                            const errorData = JSON.parse(text);
-                            errorMessage = errorData.message || 'Failed to place the order.';
-                        } catch {
-                            errorMessage = text || 'Failed to place the order.';
-                        }
-                        throw new Error(errorMessage);
-                    });
-                }
-                return response.json(); // Parse the successful response
-            })
-            .then(result => {
-                alert(result.message); // Show success message
-                this.updateAvailableInventory(); // Call the method to update inventory
+            try {
+                // Send the order data to the backend API
+                const orderResponse = await fetch('http://localhost:3000/collection/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(orderData),
+                });
         
-                // Clear the order form fields and the cart
+                if (!orderResponse.ok) {
+                    const errorText = await orderResponse.text();
+                    const errorMessage = this.parseErrorMessage(errorText, 'Failed to place the order.');
+                    throw new Error(errorMessage);
+                }
+        
+                const orderResult = await orderResponse.json();
+                console.log('Order placed successfully:', orderResult);
+        
+                // Update inventory for each lesson in the cart
+                for (const item of this.cart) {
+                    const lessonId = item._id || item.id;
+        
+                    const inventoryResponse = await fetch(`http://localhost:3000/collection/lessons/${lessonId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ availableInventory: item.availableInventory }),
+                    });
+        
+                    if (!inventoryResponse.ok) {
+                        const errorText = await inventoryResponse.text();
+                        const errorMessage = this.parseErrorMessage(
+                            errorText,
+                            `Failed to update inventory for lesson ${lessonId}.`
+                        );
+                        throw new Error(errorMessage);
+                    }
+        
+                    const inventoryResult = await inventoryResponse.json();
+                    console.log(`Inventory updated for lesson ${lessonId}:`, inventoryResult);
+                }
+        
+                // Clear the order form fields and cart
                 this.order = {
                     firstName: '',
                     lastName: '',
@@ -155,16 +172,29 @@ new Vue({
                     city: '',
                     zip: '',
                     state: '',
-                    type: ''
+                    type: '',
                 };
-                this.cart = []; // Clear the cart after placing an order
-                this.showLessons = true; // Return to lessons view after placing the order
-            })
-            .catch(error => {
+                this.cart = [];
+                this.showLessons = true;
+        
+                // Show success message
+                alert(orderResult.message || 'Order placed successfully!');
+        
+            } catch (error) {
                 console.error('Error submitting order:', error);
                 alert(error.message || 'Failed to place the order. Please try again later.');
-            });
+            }
         },
+        
+        parseErrorMessage(responseText, defaultMessage) {
+            try {
+                const errorData = JSON.parse(responseText);
+                return errorData.message || defaultMessage;
+            } catch {
+                return responseText || defaultMessage;
+            }
+        },
+        
         updateAvailableInventory() {
             this.cart.forEach(item => {
                 const lessonId = item._id || item.id; // Use the MongoDB ObjectId if available
