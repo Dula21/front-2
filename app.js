@@ -145,7 +145,7 @@ new Vue({
             })
             .then(result => {
                 alert(result.message); // Show success message
-                this.updateavailableInventory(); // Call the method to update seat availability
+                this.updateAvailableInventory(); // Call the method to update inventory
         
                 // Clear the order form fields and the cart
                 this.order = {
@@ -165,59 +165,45 @@ new Vue({
                 alert(error.message || 'Failed to place the order. Please try again later.');
             });
         },
+        updateAvailableInventory() {
+            this.cart.forEach(item => {
+                const lessonId = item._id || item.id; // Use the MongoDB ObjectId if available
         
-        updateavailableInventory() {
-            this.cart.forEach(lesson => {
-                const updateData = {
-                    availableInventory: lesson.availableInventory - lesson.quantity // Update available inventory
-                };
-        
-                // Send PUT request to the server
-                fetch(`http://localhost:3000/collection/lessons/${lesson.id}`, {
+                fetch(`http://localhost:3000/collection/lessons/${lessonId}`, {
                     method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(updateData)
+                    body: JSON.stringify({ availableInventory: item.availableInventory }),
                 })
                 .then(response => {
                     if (!response.ok) {
-                        return response.text().then(text => {
-                            let errorMessage;
-                            try {
-                                const errorData = JSON.parse(text);
-                                errorMessage = errorData.message || 'Failed to update seat availability.';
-                            } catch {
-                                errorMessage = text || 'Failed to update seat availability.';
-                            }
-                            throw new Error(errorMessage);
-                        });
+                        throw new Error(`Failed to update inventory for lesson ${lessonId}`);
                     }
-                    return response.json(); // Parse successful response
+                    return response.json();
                 })
-                .then(result => {
-                    console.log(`Seat availability updated for lesson ID: ${lesson.id}`, result);
+                .then(data => {
+                    console.log(`Inventory updated for lesson ${lessonId}:`, data);
                 })
                 .catch(error => {
-                    console.error(`Error updating seat availability for lesson ID: ${lesson.id}`, error);
-                    alert(`Failed to update seat availability for lesson "${lesson.title}". Please try again later.`);
+                    console.error(`Error updating inventory for lesson ${lessonId}:`, error);
                 });
             });
         },
+        
         cartCount(lessonId) {
             let count = 0;
-                    for (let i = 0; i < this.cart.length; i++) {
-                        if (this.cart[i] === lessonId) {
-                            count++;
-                        }
-                    }
-                    return count;
+            for (let i = 0; i < this.cart.length; i++) {
+                if (this.cart[i].id === lessonId) {
+                    count++;
+                }
+            }
+            return count;
         },
         setSortOption(option) {
             this.sortOption = option; // Method to set sorting option
         },
     },
-    
     created() {
         console.log('Requesting data from server...');
 
