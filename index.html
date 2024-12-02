@@ -54,13 +54,16 @@
                             <span v-for="n in Math.max(0, 5 - lesson.rating)" :key="'empty-' + n">☆</span>
                         </div>
                         
-                        <button v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)"> A
-                            {{ canAddToCart(lesson) ? "Add to Cart" : "Out of Stock !" }}
-                        </button>
-                        <span v-if="lesson.availableInventory === cartCount(lesson.id)">All out!</span>
-                        <span v-else>Buy Now!</span>
-                        <span v-else-if="lesson.availableInventory - cartCount(lesson.id) < 5">
+                        <button v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)">Add to Cart
+                           
+                            <button disabled="disabled" v-else> Out Of Stock</button>
+                            <span v-if="lesson.availableInventory === cartCount(lesson.id)">All out!</span>
+                            <span v-else-if="lesson.availableInventory - cartCount(lesson.id) < 5"></span>
                             Only {{ lesson.availableInventory - cartCount(lesson.id) }} left!
+                            
+                    <span v-else>Buy Now!</span>
+                        
+                            
                         </span>
                     </div>
                 </div>
